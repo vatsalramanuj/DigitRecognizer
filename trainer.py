@@ -3,23 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
 
-
-data = pd.read_csv(r"/home/ace/Documents/New_Stuff/Machine_learning/train.csv")
-data.head()
-data = np.array(data)
-m, n = data.shape
-np.random.shuffle(data)
-
-data_dev = data[:1000].T # transposed too
-# Separating pixel values and true numbers
-Y_dev = data_dev[0] # 1st row
-X_dev = data_dev[1:]/255 # other rows - pixel values
-
-data_train = data[1000:].T
-Y_train = data_train[0] 
-X_train = data_train[1:]/255
-
-
 def init_params():
     # W - weights
     # b - biases
@@ -136,6 +119,20 @@ def test_prediction(index, W1, b1, W2, b2):
 
 
 if __name__ == "__main__":
+    data = pd.read_csv(r"/home/ace/Documents/New_Stuff/Machine_learning/train.csv")
+    data.head()
+    data = np.array(data)
+    m, n = data.shape
+    np.random.shuffle(data)
+
+    data_dev = data[:1000].T # transposed too
+    # Separating pixel values and true numbers
+    Y_dev = data_dev[0] # 1st row
+    X_dev = data_dev[1:]/255 # other rows - pixel values
+
+    data_train = data[1000:].T
+    Y_train = data_train[0] 
+    X_train = data_train[1:]/255
     # Training step - run only when training or changing hyperparameters
     num_epochs = 10
 

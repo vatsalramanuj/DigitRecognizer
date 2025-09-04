@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digit Recognizer</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: #fff;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 25px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      backdrop-filter: blur(10px);
+      width: 90%;
+      max-width: 400px;
+    }
+
+    h2 {
+      margin-bottom: 15px;
+      font-weight: 600;
+      font-size: 1.4rem;
+    }
+
+    canvas {
+      border: 3px solid #fff;
+      border-radius: 10px;
+      background: #fff;
+      cursor: crosshair;
+      margin-bottom: 15px;
+      width: 100%;
+      height: auto;
+      touch-action: none; /* Prevent scrolling while drawing */
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: #fff;
+      border: none;
+      color: #2575fc;
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      flex: 1;
+      min-width: 100px;
+    }
+
+    .btn:hover {
+      background: #2575fc;
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    #result {
+      margin-top: 15px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    @media (max-width: 480px) {
+      h2 {
+        font-size: 1.2rem;
+      }
+      .btn {
+        font-size: 0.9rem;
+        padding: 12px;
+      }
+      #result {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Draw a digit (0-9)</h2>
+    <canvas id="canvas" width="280" height="280"></canvas>
+    <div class="button-row">
+      <button class="btn" onclick="predict()">Predict</button>
+      <button class="btn" onclick="clearCanvas()">Clear</button>
+    </div>
+    <p id="result"></p>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    let drawing = false;
+
+    // Mouse events
+    canvas.addEventListener("mousedown", () => drawing = true);
+    canvas.addEventListener("mouseup", () => drawing = false);
+    canvas.addEventListener("mousemove", (e) => draw(e.offsetX, e.offsetY, e));
+
+    // Touch events
+    canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        drawing = true;
+        handleTouch(e);
+    });
+    canvas.addEventListener("touchend", () => drawing = false);
+    canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        handleTouch(e);
+    });
+
+    function getCanvasCoords(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function draw(x, y, e) {
+        if (!drawing) return;
+        let coords = getCanvasCoords(e.clientX, e.clientY);
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(coords.x, coords.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function handleTouch(e) {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        let coords = getCanvasCoords(touch.clientX, touch.clientY);
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(coords.x, coords.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function clearCanvas() {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        document.getElementById("result").innerText = "";
+    }
+    async function predict() {
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      const formData = new FormData();
+      formData.append("file", blob, "digit.png");
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/predict", {
+          method: "POST",
+          body: formData 
+        });
+
+        if (!response.ok) throw new Error("HTTP error " + response.status);
+        const result = await response.json();
+        document.getElementById("result").innerText = "Prediction: " + result.prediction;
+
+      } catch (err) {
+        console.error("Error:", err);
+        document.getElementById("result").innerText = "Error: " + err;
+      }
+    }
+
+  </script>
+
+</body>
+</html>

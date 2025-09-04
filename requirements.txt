@@ -1,0 +1,9 @@
+flask
+flask_cors
+pickle
+pillow
+matplotlib
+numpy
+pandas
+tkinter
+gunicorn
